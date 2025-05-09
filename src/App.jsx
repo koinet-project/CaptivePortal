@@ -12,12 +12,11 @@ import { BeatLoader } from "react-spinners";
 import BounceLoader from "react-spinners/BounceLoader";
 import PriceCardContent from "./PriceCardContent";
 import "./App.css";
-import { useSearchParams } from "react-router";
 
 function App() {
   // ---------------------------- Websocket params & states -------------------------
   const searchParams = new URLSearchParams(window.location.search); // Search params on login url
-  const loginUrl = searchParams.get("link-login");
+  // const loginUrl = searchParams.get("link-login");
   const socketRef = useRef(null); // Websocket reference
   const [responseData, setResponseData] = useState(null); // Last response data from the server
 
@@ -58,9 +57,47 @@ function App() {
         setQueuePlace(responseData.data.queue_pos - 1);
       } else if (status == "approved") {
         setLoginStatus(true);
-        setTimeout(() => {
-          window.location.href = "https://www.koinet.com";
-        }, 3000);
+
+        const loginUrl = searchParams.get("link-login");
+        const mac = searchParams.get("mac")
+
+        // window.location.href(loginUrl + "login?username=" + mac + "&password=" + mac)
+
+        // Create form
+        const form = document.createElement("form")
+        form.name = "login"
+        form.method = "POST"
+        form.action = loginUrl
+
+        const usernameField = document.createElement("input");
+        usernameField.name = "username"
+        usernameField.value = mac;
+
+        const passwordField = document.createElement("input");
+        passwordField.name = "password";
+        passwordField.value = mac;
+
+        const domainField = document.createElement("input");
+        domainField.name = "domain"
+        domainField.value = ""
+
+        const dstField = document.createElement("input")
+        dstField.name = "dst"
+        dstField.value = searchParams.get("dst")
+
+        const submitField = document.createElement("input")
+        submitField.name = "login"
+        submitField.value = "log in"
+
+        form.appendChild(usernameField)
+        form.appendChild(passwordField)
+        form.appendChild(domainField)
+        form.appendChild(dstField)
+        form.appendChild(submitField)
+
+        document.body.appendChild(form);
+
+        form.submit();
       }
     }
   }, [responseData]);
@@ -92,8 +129,8 @@ function App() {
         >
           <Stack spacing={2}>
             <Typography variant="h5" textAlign="center">
-              Selamat datang di Wi-Fi Koin <br/> 
-              {loginUrl}
+              Selamat datang di Wi-Fi Koin <br/>
+              {searchParams.get("mac")}
             </Typography>
             <Typography
               paddingY={1}
