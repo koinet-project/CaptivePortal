@@ -22,8 +22,10 @@ function App() {
   const [responseData, setResponseData] = useState(null); // Last response data from the server
 
   // ---------------------------- Queue states -------------------------
+  const [status, setStatus] = useState(99); // 0 = queueing, 1 = receiving, 2 = success, -1 = failed, 99 = loading
   const [queuePlace, setQueuePlace] = useState(null);
-  const [loginStatus, setLoginStatus] = useState(false);
+  const [timer, setTimer] = useState(null);
+  const [coinCount, setCoinCount] = useState(null);
 
   // ---------------------------- Websocket connection on website load -------------------------
   useEffect(() => {
@@ -39,6 +41,7 @@ function App() {
       try {
         const messageJson = JSON.parse(event.data);
         setResponseData(messageJson);
+        console.log('new data', messageJson);
       } catch (err) {
         console.log("Bad JSON from server", err, event.data);
       }
@@ -48,6 +51,7 @@ function App() {
     ws.onclose = () => console.log(`socket closed`);
   }, []);
 
+
   useEffect(() => {
     if (responseData == null) {
       return;
@@ -55,12 +59,62 @@ function App() {
       const status = responseData.status;
 
       if (status == "waiting") {
+        setStatus(0)
         setQueuePlace(responseData.data.queue_pos - 1);
-      } else if (status == "approved") {
-        setLoginStatus(true);
+      } else if (status == "receiving") {
+        setStatus(1)
+        setCoinCount(responseData.data.coin_count)
+        setTimer(responseData.data.timer)
+      } else if (status == "approved" || status == "bypass") {
+        setStatus(2)
+
+        const loginUrl = searchParams.get("link-login")
+        const mac = searchParams.get("mac")
+
+        // window.location.href(loginUrl + "login?username=" + mac + "&password=" + mac)
+
+        // Create form
+        const form = document.createElement("form")
+        form.name = "login"
+        form.method = "POST"
+        form.action = loginUrl
+
+        const usernameField = document.createElement("input");
+        usernameField.name = "username"
+        usernameField.value = mac;
+
+        const passwordField = document.createElement("input");
+        passwordField.name = "password";
+        passwordField.value = mac;
+
+        const domainField = document.createElement("input");
+        domainField.name = "domain"
+        domainField.value = ""
+
+        const dstField = document.createElement("input")
+        dstField.name = "dst"
+        dstField.value = searchParams.get("dst")
+
+        const submitField = document.createElement("input")
+        submitField.name = "login"
+        submitField.value = "log in"
+
+        form.appendChild(usernameField)
+        form.appendChild(passwordField)
+        form.appendChild(domainField)
+        form.appendChild(dstField)
+        form.appendChild(submitField)
+
+        document.body.appendChild(form);
+
+        form.submit();
+
+
         setTimeout(() => {
           window.location.href = "https://www.koinet.com";
         }, 3000);
+      } else if (status == "denied") {
+        setStatus(-1)
       }
     }
   }, [responseData]);
@@ -93,7 +147,6 @@ function App() {
           <Stack spacing={2}>
             <Typography variant="h5" textAlign="center">
               Selamat datang di Wi-Fi Koin <br/> 
-              {loginUrl}
             </Typography>
             <Typography
               paddingY={1}
@@ -115,8 +168,11 @@ function App() {
         <Stack>
           <Typography variant="body1"></Typography>
         </Stack>
-        {queuePlace > 0 ? (
-          <>
+        <>
+        {(() => {
+          switch (status) {
+            case 0:
+              return <>
             <Typography variant="h6" textAlign="center">
               Mohon menunggu antrian untuk memasukkan koin.
             </Typography>
@@ -145,25 +201,24 @@ function App() {
                 </Typography>
               </CardContent>
             </Card>
-          </>
-        ) : (
-          <>
-            {loginStatus ? (
-              <>
-                <Typography variant="h6" textAlign="center">
-                  Kamu mendapatkan akses internet selama 2 menit! <br />
-                  Selamat menikmati akses internet murah dan cepat
-                </Typography>
-              </>
-            ) : (
-              <>
-                <Typography variant="h6" textAlign="center">
-                  Menunggu server... (DEBUG)
-                </Typography>
-              </>
-            )}
-          </>
-        )}
+          </>;
+            case 1:
+              return <>
+                <Stack>
+                  <p>Receiving Coin</p>
+                  <p>Timer: {timer}</p>
+                  <p>Coin: {coinCount}</p>
+                </Stack>
+              </>;
+            case 2:
+              return <p>Success!</p>;
+            case -1:
+              return <p>Failed!</p>
+            case 99:
+              return <p>Loading</p>;
+          }
+        })()}
+        </>
       </Stack>
     </>
   );
