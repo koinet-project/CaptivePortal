@@ -12,12 +12,11 @@ import { BeatLoader } from "react-spinners";
 import BounceLoader from "react-spinners/BounceLoader";
 import PriceCardContent from "./PriceCardContent";
 import "./App.css";
-import { useSearchParams } from "react-router";
 
 function App() {
   // ---------------------------- Websocket params & states -------------------------
   const searchParams = new URLSearchParams(window.location.search); // Search params on login url
-  const loginUrl = searchParams.get("link-login");
+  // const loginUrl = searchParams.get("link-login");
   const socketRef = useRef(null); // Websocket reference
   const [responseData, setResponseData] = useState(null); // Last response data from the server
 
